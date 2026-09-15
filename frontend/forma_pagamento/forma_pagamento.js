@@ -1,31 +1,32 @@
 const URL_API = 'http://localhost:3001';
 
 let oQueEstaFazendo = '';
-let cargo = null;
+let forma_pagamento = null;
 bloquearAtributos(true);
 
 async function procurePorChavePrimaria(chave) {
     try {
-        const resposta = await fetch(`${URL_API}/cargo/${chave}`);
+        const resposta = await fetch(`${URL_API}/forma_pagamento/${chave}`);
         const data = await resposta.json();
-        return data.sucesso ? data.cargo : null;
+        return data.sucesso ? data.forma_pagamento : null;
     } catch (erro) {
         return null;
     }
 }
 
 async function procure() {
-    const id_cargo = parseInt(document.getElementById("inputId_cargo").value, 10);
-    if (isNaN(id_cargo)) {
-        mostrarAviso("O ID do Cargo não pode ser vazio e deve ser um número.");
+    const id_forma_pagamento = document.getElementById("inputId_forma_pagamento").value.trim().toUpperCase();
+    if (!id_forma_pagamento || id_forma_pagamento.length > 2) {
+        mostrarAviso("O ID deve conter de 1 a 2 caracteres.");
         return;
     }
 
-    cargo = await procurePorChavePrimaria(id_cargo);
+    document.getElementById("inputId_forma_pagamento").value = id_forma_pagamento;
+    forma_pagamento = await procurePorChavePrimaria(id_forma_pagamento);
     oQueEstaFazendo = '';
     
-    if (cargo) {
-        mostrarDadosCargo(cargo);
+    if (forma_pagamento) {
+        mostrarDadosFormaPagamento(forma_pagamento);
         visibilidadeDosBotoes('inline', 'none', 'inline', 'inline', 'none');
         mostrarAviso("Achou no banco, pode alterar ou excluir");
     } else {
@@ -39,7 +40,7 @@ function inserir() {
     bloquearAtributos(false);
     visibilidadeDosBotoes('none', 'none', 'none', 'none', 'inline');
     oQueEstaFazendo = 'inserindo';
-    mostrarAviso("INSERINDO - Digite o nome do cargo e clique em salvar");
+    mostrarAviso("INSERINDO - Digite o nome da forma de pagamento e clique em salvar");
 }
 
 function alterar() {
@@ -57,37 +58,24 @@ function excluir() {
 }
 
 async function salvar() {
-    const id_cargo = parseInt(document.getElementById("inputId_cargo").value, 10);
-    const nome_cargo = document.getElementById("inputNome_cargo").value.trim();
+    const id_forma_pagamento = document.getElementById("inputId_forma_pagamento").value.trim().toUpperCase();
+    const nome_forma_pagamento = document.getElementById("inputNome_forma_pagamento").value;
 
-    if (isNaN(id_cargo)) {
-        mostrarAviso("O ID do cargo deve ser um número válido.");
-        return;
-    }
-
-    const dadosCargo = { id_cargo, nome_cargo };
+    const dadosFormaPagamento = { id_forma_pagamento, nome_forma_pagamento };
 
     try {
         if (oQueEstaFazendo === 'inserindo') {
-            const resp = await fetch(`${URL_API}/cargo`, { 
-                method: 'POST', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(dadosCargo) 
-            });
+            const resp = await fetch(`${URL_API}/forma_pagamento`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dadosFormaPagamento) });
             const data = await resp.json();
             if (!data.sucesso) return mostrarAviso(data.mensagem);
             mostrarAviso("Inserido no Banco de Dados com sucesso!");
         } else if (oQueEstaFazendo === 'alterando') {
-            const resp = await fetch(`${URL_API}/cargo/${id_cargo}`, { 
-                method: 'PUT', 
-                headers: { 'Content-Type': 'application/json' }, 
-                body: JSON.stringify(dadosCargo) 
-            });
+            const resp = await fetch(`${URL_API}/forma_pagamento/${id_forma_pagamento}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(dadosFormaPagamento) });
             const data = await resp.json();
             if (!data.sucesso) return mostrarAviso(data.mensagem);
             mostrarAviso("Alterado no Banco de Dados com sucesso!");
         } else if (oQueEstaFazendo === 'excluindo') {
-            const resposta = await fetch(`${URL_API}/cargo/${id_cargo}`, { method: 'DELETE' });
+            const resposta = await fetch(`${URL_API}/forma_pagamento/${id_forma_pagamento}`, { method: 'DELETE' });
             const data = await resposta.json();
             if (!data.sucesso) {
                 mostrarAviso(data.mensagem || "Erro ao excluir no servidor.");
@@ -98,7 +86,7 @@ async function salvar() {
 
         visibilidadeDosBotoes('inline', 'none', 'none', 'none', 'none');
         limparAtributos();
-        document.getElementById("inputId_cargo").value = "";
+        document.getElementById("inputId_forma_pagamento").value = "";
         listar();
     } catch (erro) {
         mostrarAviso("Erro ao efetuar operação no servidor.");
@@ -107,17 +95,15 @@ async function salvar() {
 
 async function listar() {
     try {
-        const resposta = await fetch(`${URL_API}/cargo/listar`);
-
-       
+        const resposta = await fetch(`${URL_API}/forma_pagamento/listar`);
         const data = await resposta.json();
-       // alert("teste "+stringify(dada))
+        
         if (data.sucesso) {
             let texto = "";
-            for (let linha of data.cargos) {
-                texto += `<b>[${linha.id_cargo}]</b> - ${linha.nome_cargo}<br>`;
+            for (let linha of data.formas_pagamentos) {
+                texto += `<b>[${linha.id_forma_pagamento}]</b> - ${linha.nome_forma_pagamento}<br>`;
             }
-            document.getElementById("outputSaida").innerHTML = texto || "Nenhum cargo cadastrado.";
+            document.getElementById("outputSaida").innerHTML = texto || "Nenhuma forma de pagamento cadastrada.";
         } else {
             document.getElementById("outputSaida").innerHTML = `Erro no banco: ${data.mensagem}`;
         }
@@ -138,22 +124,22 @@ function mostrarAviso(mensagem) {
     document.getElementById("divAviso").innerHTML = mensagem;
 }
 
-function mostrarDadosCargo(u) {
-    document.getElementById("inputId_cargo").value = u.id_cargo;
-    document.getElementById("inputNome_cargo").value = u.nome_cargo;
+function mostrarDadosFormaPagamento(f) {
+    document.getElementById("inputId_forma_pagamento").value = f.id_forma_pagamento;
+    document.getElementById("inputNome_forma_pagamento").value = f.nome_forma_pagamento;
     bloquearAtributos(true);
 }
 
 function limparAtributos() {
-    cargo = null;
+    forma_pagamento = null;
     oQueEstaFazendo = '';
-    document.getElementById("inputNome_cargo").value = "";
+    document.getElementById("inputNome_forma_pagamento").value = "";
     bloquearAtributos(true);
 }
 
 function bloquearAtributos(soLeitura) {
-    document.getElementById("inputId_cargo").readOnly = !soLeitura;
-    document.getElementById("inputNome_cargo").readOnly = soLeitura;
+    document.getElementById("inputId_forma_pagamento").readOnly = !soLeitura;
+    document.getElementById("inputNome_forma_pagamento").readOnly = soLeitura;
 }
 
 function visibilidadeDosBotoes(btP, btI, btA, btE, btS) {
